@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Dinero Flow">
-    <meta name="theme-color" content="#0a0a0a">
-    
-    <link rel="manifest" href='data:application/manifest+json,{"name":"CLos Dinero Flow","short_name":"Dinero Flow","start_url":".","display":"standalone","background_color":"#0a0a0a","theme_color":"#0a0a0a","icons":[{"src":"https://ui-avatars.com/api/?name=CC&background=000&color=fff&size=512","sizes":"512x512","type":"image/png"}]}'>
 
     <title>C-Lo's Dinero Flow v9.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -637,8 +638,8 @@
             showFoodLeaderboard: function() { const monthTx = this.getCurrentMonthTx(); const foodTx = monthTx.filter(t=>t.c==="Dining"||t.c==="Groceries"); const spots={}; foodTx.forEach(t=>{ let n = t.t.split('#')[0].split(' Store')[0].trim().replace(/TST\*/g,'').replace(/SQ \*/g,'').trim(); if(n.toLowerCase().includes("chick")) n="Chick-Fil-A"; if(n.toLowerCase().includes("harris")) n="Harris Teeter"; spots[n]=(spots[n]||0)+Math.abs(t.a); }); const sorted = Object.entries(spots).sort((a,b)=>b[1]-a[1]); const tbody = document.getElementById('leaderboard-body'); tbody.innerHTML = ''; sorted.forEach((item, index) => { tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3 font-bold text-yellow-500">#${index+1}</td><td class="px-4 py-3 text-neutral-300">${item[0]}</td><td class="px-4 py-3 text-right font-bold text-white">$${item[1].toFixed(2)}</td></tr>`; }); document.getElementById('spending-view').classList.add('hidden'); document.getElementById('leaderboard-view').classList.remove('hidden'); },
             closeFoodDetails: function() { app.activeFoodView = null; document.getElementById('food-detail-view').classList.add('hidden'); document.getElementById('leaderboard-view').classList.add('hidden'); document.getElementById('spending-view').classList.remove('hidden'); },
             renderP2PSummary: function() { const monthTx = this.getCurrentMonthTx(); const terms = ['zelle','venmo','cash app','paypal']; const p2pTx = monthTx.filter(t => terms.some(x => t.t.toLowerCase().includes(x))); const inAmt = p2pTx.filter(t=>t.a>0).reduce((s,t)=>s+t.a,0); const outAmt = p2pTx.filter(t=>t.a<0).reduce((s,t)=>s+Math.abs(t.a),0); const net = inAmt - outAmt; this.setText('p2p-total-in', `$${inAmt.toFixed(0)}`); this.setText('p2p-total-out', `$${outAmt.toFixed(0)}`); this.setText('p2p-net', (net>=0?'+':'') + `$${net.toFixed(0)}`); const people = {}; p2pTx.forEach(t => { const desc = t.t.toLowerCase(); let name = "Other"; if(desc.includes("anna")) name="Anna"; else if(desc.includes("ariel")) name="Ariel"; else if(desc.includes("cecy")) name="Cecy"; else if(desc.includes("frank")||desc.includes("tio")) name="Tio Frank"; else if(desc.includes("oscar")) name="Oscar"; if(!people[name]) people[name] = {in:0, out:0}; if(t.a>0) people[name].in += t.a; else people[name].out += Math.abs(t.a); }); const grid = document.getElementById('p2p-people-grid'); if(grid) { grid.innerHTML = ''; Object.entries(people).forEach(([name, stats]) => { grid.innerHTML += `<div onclick="app.showPersonDetails('${name}')" class="bg-neutral-900 p-2 rounded-lg border border-neutral-800 text-center"><p class="font-bold text-white text-xs mb-1">${name}</p><p class="text-[10px] text-emerald-400">+$${stats.in.toFixed(0)}</p><p class="text-[10px] text-red-400">-$${stats.out.toFixed(0)}</p></div>`; }); } },
-            showPersonDetails: function(name) { app.activePersonView = name; const monthTx = this.getCurrentMonthTx(); const terms = ['zelle','venmo','cash app','paypal']; let personTx; if (name === "Other") { personTx = monthTx.filter(t => { const desc = t.t.toLowerCase(); const isP2P = terms.some(x => desc.includes(x)); const isKnown = desc.includes("anna") || desc.includes("ariel") || desc.includes("cecy") || desc.includes("frank") || desc.includes("tio") || desc.includes("oscar"); return isP2P && !isKnown; }); } else { personTx = monthTx.filter(t => terms.some(x => t.t.toLowerCase().includes(x)) && t.t.toLowerCase().includes(name.toLowerCase())); } const net = personTx.reduce((s, t) => s + t.a, 0); this.setText('person-detail-name', name); this.setText('person-detail-total', (net>=0?'+':'') + `$${net.toFixed(2)}`); const tbody = document.getElementById('person-detail-body'); tbody.innerHTML = ''; personTx.sort((a,b) => new Date(b.d) - new Date(a.d)).forEach(t => { tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3">${t.d.substring(5)}</td><td class="px-4 py-3 text-xs">${t.t.substring(0,15)}...</td><td class="px-4 py-3 text-right font-bold text-white">${t.a.toFixed(2)}</td><td class="px-4 py-3 text-center"><button onclick="app.openTxModal(${t.id})" class="text-blue-400"><span class="material-symbols-rounded text-sm">edit</span></button></td></tr>`; }); document.getElementById('transactions-view').classList.add('hidden'); document.getElementById('person-view').classList.remove('hidden'); },
-            closePersonDetails: function() { app.activePersonView = null; document.getElementById('person-view').classList.add('hidden'); document.getElementById('transactions-view').classList.remove('hidden'); },
+            showPersonDetails: function(name) { app.activePersonView = name; const monthTx = this.getCurrentMonthTx(); const terms = ['zelle','venmo','cash app','paypal']; let personTx; if (name === "Other") { personTx = monthTx.filter(t => { const desc = t.t.toLowerCase(); const isP2P = terms.some(x => desc.includes(x)); const isKnown = desc.includes("anna") || desc.includes("ariel") || desc.includes("cecy") || desc.includes("frank") || desc.includes("tio") || desc.includes("oscar"); return isP2P && !isKnown; }); } else { personTx = monthTx.filter(t => terms.some(x => t.t.toLowerCase().includes(x)) && t.t.toLowerCase().includes(name.toLowerCase())); } const net = personTx.reduce((s, t) => s + t.a, 0); this.setText('person-detail-name', name); this.setText('person-detail-total', (net>=0?'+':'') + `$${net.toFixed(2)}`); const tbody = document.getElementById('person-detail-body'); tbody.innerHTML = ''; personTx.sort((a,b) => new Date(b.d) - new Date(a.d)).forEach(t => { tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3">${t.d.substring(5)}</td><td class="px-4 py-3 text-xs">${t.t.substring(0,15)}...</td><td class="px-4 py-3 text-right font-bold text-white">${t.a.toFixed(2)}</td><td class="px-4 py-3 text-center"><button onclick="app.openTxModal(${t.id})" class="text-blue-400"><span class="material-symbols-rounded text-sm">edit</span></button></td></tr>`; }); document.getElementById('transactions-view').classList.add('hidden'); document.getElementById('person-detail-view').classList.remove('hidden'); },
+            closePersonDetails: function() { app.activePersonView = null; document.getElementById('person-detail-view').classList.add('hidden'); document.getElementById('transactions-view').classList.remove('hidden'); },
             renderTransactions: function(filter='') { const tbody = document.getElementById('tx-table-body'); if(!tbody) return; tbody.innerHTML=''; [...this.data.transactions].sort((a,b)=>new Date(b.d)-new Date(a.d)).forEach(t => { if(filter && !t.t.toLowerCase().includes(filter.toLowerCase())) return; tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3 text-neutral-400">${t.d.substring(5)}</td><td class="px-4 py-3 font-medium text-white">${t.t.substring(0,20)}</td><td class="px-4 py-3 text-right font-bold ${t.a>0?'text-emerald-400':'text-neutral-300'}">${t.a.toFixed(0)}</td><td class="px-4 py-3 text-center"><button onclick="app.openTxModal(${t.id})" class="text-blue-400 p-1"><span class="material-symbols-rounded text-sm">edit</span></button></td></tr>`; }); },
             openImportModal: () => document.getElementById('import-modal').classList.remove('hidden'),
             importData: function() {
@@ -646,62 +647,28 @@
                     const raw = document.getElementById('import-text').value.trim();
                     if (!raw) return alert("Please paste data or select file.");
                     if (raw.startsWith('{') && raw.includes('transactions')) { if(confirm("Restore backup?")) { this.data = JSON.parse(raw); this.saveData(); this.renderAll(); document.getElementById('import-modal').classList.add('hidden'); alert("Restored!"); } return; }
-                    
-                    // --- v9.6 DUPLICATE SHIELD ---
-                    const lines = raw.split(/\r?\n/); 
-                    let count = 0; 
-                    let duplicates = 0;
-                    
-                    // Create fingerprints for existing transactions
-                    const existingFingerprints = new Set(this.data.transactions.map(t => `${t.d}|${t.t}|${t.a}`));
-
+                    const lines = raw.split(/\r?\n/); let count = 0; let duplicates = 0; const existingFingerprints = new Set(this.data.transactions.map(t => `${t.d}|${t.t}|${t.a}`));
                     const sep = lines[0].includes('\t') ? '\t' : ',';
                     const splitLine = (line) => { if (sep === '\t') return line.split('\t'); const res = []; let inQuote = false; let current = ''; for (let i = 0; i < line.length; i++) { const c = line[i]; if (c === '"') { inQuote = !inQuote; continue; } if (c === ',' && !inQuote) { res.push(current.trim()); current = ''; } else { current += c; } } res.push(current.trim()); return res; };
                     let headers = []; let headerRowIdx = -1;
                     for(let i=0; i<Math.min(lines.length, 5); i++) { const cols = splitLine(lines[i]).map(c => c.toLowerCase().replace(/['"]+/g, '').trim()); if(cols.includes('posting date') || cols.includes('date') || cols.includes('amount')) { headers = cols; headerRowIdx = i; break; } }
                     if (headerRowIdx === -1) { alert("Headers not found."); return; }
                     const dateIdx = headers.indexOf('posting date') > -1 ? headers.indexOf('posting date') : headers.indexOf('date'); const descIdx = headers.indexOf('description'); const amtIdx = headers.indexOf('amount');
-                    
                     for (let i = headerRowIdx + 1; i < lines.length; i++) {
                         const row = splitLine(lines[i]); if (row.length <= Math.max(dateIdx, amtIdx)) continue;
                         let dateStr = row[dateIdx].replace(/['"]+/g, ''); let desc = row[descIdx] ? row[descIdx].replace(/['"]+/g, '') : "Unknown"; let amt = parseFloat(row[amtIdx].replace(/['"$]+/g, ''));
                         if (dateStr && !isNaN(amt)) {
-                            let formattedDate = dateStr; 
-                            
-                            // DATE PARSING FIX (Handle 4-digit years correctly)
-                            if(dateStr.includes('/')) { 
-                                const parts = dateStr.split('/'); 
-                                if(parts.length === 3) {
-                                    let y = parts[2];
-                                    if(y.length === 2) y = '20' + y;
-                                    formattedDate = `${y}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
-                                }
-                            }
-                            
-                            // CHECK FINGERPRINT
-                            const fingerprint = `${formattedDate}|${desc}|${amt}`;
-                            if(existingFingerprints.has(fingerprint)) {
-                                duplicates++;
-                                continue; // SKIP ADDING
-                            }
-
+                            let formattedDate = dateStr; if(dateStr.includes('/')) { const parts = dateStr.split('/'); if(parts.length === 3) { let y = parts[2]; if(y.length === 2) y = '20' + y; formattedDate = `${y}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`; } }
+                            const fingerprint = `${formattedDate}|${desc}|${amt}`; if(existingFingerprints.has(fingerprint)) { duplicates++; continue; }
                             let cat = "Other"; const dLow = desc.toLowerCase();
                             if(amt > 0) cat = "Income"; else if(dLow.includes("flex")||dLow.includes("rent")) cat = "Rent"; else if(dLow.includes("loan")||dLow.includes("chase")||dLow.includes("tio")) cat = "Debt";
                             else if(dLow.includes("walmart")||dLow.includes("harris")||dLow.includes("sams")||dLow.includes("food lion")||dLow.includes("publix")||dLow.includes("aldi")) cat = "Groceries";
                             else { const foods=["restaurant","cafe","coffee","starbucks","dunkin","pizza","domino","burger","chick","mcdonald","taco","grill","bar","kitchen","sushi","bagel","deli","delaney","quarter","wendy","sonic","bojangles"]; if(foods.some(w=>dLow.includes(w))) cat = "Dining"; }
                             if(dLow.includes("cash app*carlos cortez") && Math.abs(amt) > 150 && Math.abs(amt) < 160) cat = "Debt"; if(dLow.includes("5201")) cat = "Debt";
-                            
-                            this.data.transactions.push({ d: formattedDate, t: desc, a: amt, c: cat, id: Date.now() + Math.random() }); 
-                            count++;
+                            this.data.transactions.push({ d: formattedDate, t: desc, a: amt, c: cat, id: Date.now() + Math.random() }); count++;
                         }
                     }
-                    if(count > 0 || duplicates > 0) { 
-                        this.saveData(); 
-                        this.renderAll(); 
-                        document.getElementById('import-modal').classList.add('hidden'); 
-                        document.getElementById('import-text').value = ''; 
-                        alert(`Imported: ${count}\nSkipped Duplicates: ${duplicates}`); 
-                    }
+                    if(count > 0 || duplicates > 0) { this.saveData(); this.renderAll(); document.getElementById('import-modal').classList.add('hidden'); document.getElementById('import-text').value = ''; alert(`Imported: ${count}\nSkipped Duplicates: ${duplicates}`); }
                 } catch(e) { console.error(e); alert("Import failed."); }
             },
             saveBudget: () => { app.data.budget.avgIncome = parseFloat(document.getElementById('set-income').value); app.data.budget.annaContrib = parseFloat(document.getElementById('set-anna').value); app.data.budget.startingBalance = parseFloat(document.getElementById('set-start-bal').value); app.saveData(); app.renderAll(); app.switchTab('dashboard'); },
@@ -721,6 +688,13 @@
             getStarterData: function() { return []; } 
         };
         window.addEventListener('DOMContentLoaded', () => app.init());
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(err => console.log('SW failed', err));
+            });
+        }
     </script>
 </body>
 </html>
