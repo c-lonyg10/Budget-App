@@ -3,8 +3,8 @@
   "short_name": "Dinero Flow",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#0a0a0a",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "https://ui-avatars.com/api/?name=CC&background=0a0a0a&color=fff&size=192&rounded=true",
