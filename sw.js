@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dinero-flow-v1';
+const CACHE_NAME = 'dinero-flow-v9-9';
 const urlsToCache = [
   './',
   './index.html',
