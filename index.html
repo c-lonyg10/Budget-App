@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <link rel="manifest" href="manifest.json">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dinero Flow">
     <meta name="theme-color" content="#0a0a0a">
     
+    <link rel="manifest" href='data:application/manifest+json,{"name":"CLos Dinero Flow","short_name":"Dinero Flow","start_url":".","display":"standalone","background_color":"#0a0a0a","theme_color":"#0a0a0a","icons":[{"src":"https://ui-avatars.com/api/?name=CC&background=000&color=fff&size=512","sizes":"512x512","type":"image/png"}]}'>
+
     <title>C-Lo's Dinero Flow v9.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -721,13 +721,6 @@
             getStarterData: function() { return []; } 
         };
         window.addEventListener('DOMContentLoaded', () => app.init());
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => console.log('SW registered'))
-                    .catch(err => console.log('SW failed', err));
-            });
-        }
     </script>
 </body>
 </html>
