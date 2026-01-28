@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>C-Lo's Dinero Flow v9.8</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* PURE GREY/BLACK THEME */
+        body { font-family: 'Inter', sans-serif; background-color: #0a0a0a; color: #f5f5f5; -webkit-tap-highlight-color: transparent; }
+        .glass-panel { background: #171717; border: 1px solid #262626; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5); }
+        .glass-dock { background: #171717; border: 1px solid #262626; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.5); }
+        .dock-item { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); color: #737373; }
+        .dock-item:active { transform: scale(0.95); }
+        .dock-item.active { background-color: #262626; color: #fff; border: 1px solid #404040; box-shadow: 0 0 15px rgba(255, 255, 255, 0.05); }
+        .sonic-card { background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%); border: 2px solid #1d4ed8; position: relative; overflow: hidden; transition: transform 0.1s; cursor: pointer; box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.4); }
+        .sonic-card:active { transform: scale(0.98); }
+        .sonic-ring { color: #facc15; text-shadow: 0 0 10px rgba(250, 204, 21, 0.6); }
+        .sonic-dash { position: absolute; bottom: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, transparent, #3b82f6, transparent); opacity: 0.5; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #404040; border-radius: 3px; }
+        .stat-card { background: #171717; border-radius: 1rem; border: 1px solid #262626; overflow: hidden; position: relative; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #262626; border: 1px solid #262626; border-radius: 1rem; overflow: hidden; }
+        .cal-cell { background-color: #0a0a0a; min-height: 100px; padding: 0.25rem; display: flex; flex-direction: column; transition: background-color 0.2s; }
+        .cal-head { background-color: #171717; padding: 0.75rem; text-align: center; font-weight: 700; font-size: 0.7rem; color: #737373; }
+        .bill-pill { font-size: 0.65rem; padding: 3px 4px; border-radius: 4px; margin-bottom: 2px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .bill-pill.paid { background-color: rgba(22, 163, 74, 0.15); color: #4ade80; border: 1px solid rgba(22, 163, 74, 0.3); }
+        .bill-pill.due { background-color: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .bill-pill.late { background-color: rgba(220, 38, 38, 0.15); color: #f87171; border: 1px solid rgba(220, 38, 38, 0.3); }
+        .bill-pill.income { background-color: rgba(147, 51, 234, 0.15); color: #d8b4fe; border: 1px solid rgba(147, 51, 234, 0.4); }
+        .modal-bg { background-color: rgba(0,0,0,0.9); backdrop-filter: blur(8px); }
+        .input-dark { background-color: #0a0a0a; border: 1px solid #262626; color: white; }
+        .input-dark:focus { border-color: #525252; outline: none; }
+        .btn-primary { background-color: #f5f5f5; color: #000; transition: all 0.2s; }
+        .btn-primary:active { transform: scale(0.95); }
+        button, input, select { min-height: 44px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col relative overflow-hidden bg-black">
+
+    <header class="w-full px-6 pt-8 pb-4 flex justify-between items-center bg-black/90 backdrop-blur-md z-20 border-b border-white/5">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center text-black shadow-lg shadow-white/10">
+                <span class="material-symbols-rounded text-xl">account_balance_wallet</span>
+            </div>
+            <div>
+                <h1 class="font-black text-xl tracking-tight text-white leading-none">C-Lo's</h1>
+                <h2 class="text-xs text-neutral-500 font-bold uppercase tracking-widest">Dinero Flow</h2>
+            </div>
+        </div>
+        <button onclick="app.switchTab('settings')" class="p-1 rounded-full border border-neutral-700 bg-neutral-900">
+           <div class="h-8 w-8 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-400 font-bold">CC</div>
+        </button>
+    </header>
+
+    <main class="flex-1 overflow-y-auto pb-36 w-full relative z-10 px-4 pt-4" id="main-container">
+        
+        <div id="dashboard-view" class="view-section animate-fade-in space-y-6 max-w-lg mx-auto pb-8">
+            <div class="glass-panel p-6 rounded-3xl relative overflow-hidden bg-gradient-to-br from-neutral-900 to-emerald-950/30 border border-emerald-900/30">
+                <div class="absolute top-0 right-0 p-4 opacity-20"><span class="material-symbols-rounded text-9xl text-emerald-500">account_balance</span></div>
+                <div class="relative z-10">
+                    <p class="text-xs text-emerald-400 font-bold uppercase tracking-widest mb-1">Estimated Balance</p>
+                    <h2 class="text-5xl font-black text-white tracking-tight" id="dash-balance">--</h2>
+                    <p class="text-xs text-neutral-500 mt-2 font-medium" id="dash-month-label">--</p>
+                </div>
+            </div>
+
+            <div class="glass-panel p-5 rounded-3xl flex justify-between items-center relative overflow-hidden group">
+                <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-2"><span class="material-symbols-rounded text-emerald-400 text-lg">work</span> <span class="text-xs text-neutral-400 uppercase font-bold">Fixed</span></div>
+                    <h3 class="text-xl font-bold text-white" id="dash-fixed-income">--</h3>
+                </div>
+                <div class="w-px h-10 bg-neutral-800"></div>
+                <div class="relative z-10 text-right">
+                    <div class="flex items-center gap-2 justify-end mb-2"><span class="text-xs text-neutral-400 uppercase font-bold">Gigs & P2P</span> <span class="material-symbols-rounded text-indigo-400 text-lg">payments</span></div>
+                    <h3 class="text-xl font-bold text-white" id="dash-gig-income">--</h3>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3">
+                <div onclick="app.showBillBreakdown('day')" class="sonic-card p-3 rounded-2xl flex flex-col items-center justify-center text-center group">
+                     <span class="material-symbols-rounded text-2xl text-blue-300 mb-1">flag</span>
+                     <p class="text-[9px] text-blue-300 font-bold uppercase tracking-widest">Today</p>
+                     <h3 class="text-lg font-black text-white" id="stat-day-total">--</h3>
+                </div>
+                <div onclick="app.showBillBreakdown('week')" class="sonic-card p-3 rounded-2xl flex flex-col items-center justify-center text-center group">
+                     <span class="material-symbols-rounded text-2xl text-blue-300 mb-1">sprint</span>
+                     <p class="text-[9px] text-blue-300 font-bold uppercase tracking-widest">Week</p>
+                     <h3 class="text-lg font-black text-white" id="stat-week-total">--</h3>
+                </div>
+                <div onclick="app.showBillBreakdown('month')" class="sonic-card p-3 rounded-2xl flex flex-col items-center justify-center text-center group border-yellow-500/50">
+                     <span class="material-symbols-rounded text-2xl text-yellow-400 mb-1 sonic-ring">all_inclusive</span>
+                     <p class="text-[9px] text-yellow-400 font-bold uppercase tracking-widest">Month</p>
+                     <h3 class="text-lg font-black text-white sonic-ring" id="stat-month-total">--</h3>
+                </div>
+            </div>
+
+            <div onclick="app.switchTab('calendar')" class="glass-panel p-5 rounded-3xl flex items-center justify-between cursor-pointer active:bg-neutral-800">
+                <div>
+                    <p class="text-xs text-neutral-500 font-bold uppercase mb-1">Next Bill</p>
+                    <div id="dash-next-bill" class="text-white font-bold">No upcoming bills</div>
+                </div>
+                <span class="material-symbols-rounded text-neutral-600">chevron_right</span>
+            </div>
+
+            <div onclick="app.switchTab('spending')" class="glass-panel p-5 rounded-3xl flex items-center justify-between cursor-pointer active:bg-neutral-800">
+                <div>
+                    <p class="text-xs text-neutral-500 font-bold uppercase mb-1">Food Spent</p>
+                    <h3 class="text-2xl font-black text-white" id="dash-food-total">--</h3>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-red-400 font-bold">Dining <span id="dash-dining-split">--</span></p>
+                    <p class="text-xs text-emerald-400 font-bold">Grocery <span id="dash-grocery-split">--</span></p>
+                </div>
+            </div>
+
+            <div onclick="app.switchTab('debt')" class="glass-panel p-5 rounded-3xl flex items-center justify-between cursor-pointer active:bg-neutral-800 border border-blue-900/30">
+                <div>
+                    <p class="text-xs text-blue-400 font-bold uppercase mb-1">Freedom Countdown</p>
+                    <h3 class="text-3xl font-black text-white" id="dash-months-left">--</h3>
+                    <p class="text-[10px] text-neutral-500">months remaining</p>
+                </div>
+                <span class="material-symbols-rounded text-blue-500 text-3xl">swords</span>
+            </div>
+            
+            <button onclick="app.openTxModal()" class="w-full btn-primary py-4 rounded-2xl font-bold shadow-lg flex items-center justify-center gap-2 text-lg"><span class="material-symbols-rounded">add_circle</span> Add Transaction</button>
+        </div>
+
+        <div id="breakdown-view" class="view-section hidden space-y-6 max-w-lg mx-auto">
+             <div class="flex justify-between items-center mb-4"><button onclick="app.closeBreakdown()" class="p-2 rounded-full bg-neutral-800 text-white"><span class="material-symbols-rounded">arrow_back</span></button><h2 class="text-xl font-black text-white italic uppercase" id="breakdown-title">--</h2></div>
+             <div class="glass-panel rounded-3xl overflow-hidden"><div class="p-4 bg-neutral-900 border-b border-neutral-800 flex justify-between"><span class="font-bold text-neutral-400">Total</span><span class="text-xl font-bold text-yellow-400" id="breakdown-total">--</span></div><div class="overflow-x-auto"><table class="min-w-full text-xs text-left text-neutral-400"><tbody id="breakdown-body" class="divide-y divide-neutral-800"></tbody></table></div></div>
+        </div>
+
+        <div id="transactions-view" class="view-section hidden space-y-6 max-w-lg mx-auto">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-2xl font-bold text-white">Transactions</h2>
+                <button onclick="app.openTxModal()" class="p-2 bg-white text-black rounded-xl"><span class="material-symbols-rounded">add</span></button>
+            </div>
+            
+            <div class="glass-panel p-5 rounded-3xl mb-4">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400"><span class="material-symbols-rounded text-lg">swap_horizontal_circle</span></div>
+                        <h3 class="font-bold text-white">P2P Center</h3>
+                    </div>
+                    <span class="text-[10px] bg-neutral-900 text-neutral-400 px-2 py-1 rounded-full border border-neutral-800" id="p2p-month-label">--</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <div class="p-3 bg-neutral-900 rounded-xl border border-neutral-800 text-center"><p class="text-[9px] text-emerald-400 uppercase font-bold tracking-wide">In</p><p class="text-lg font-bold text-white mt-1" id="p2p-total-in">--</p></div>
+                    <div class="p-3 bg-neutral-900 rounded-xl border border-neutral-800 text-center"><p class="text-[9px] text-red-400 uppercase font-bold tracking-wide">Out</p><p class="text-lg font-bold text-white mt-1" id="p2p-total-out">--</p></div>
+                    <div class="p-3 bg-neutral-900 rounded-xl border border-neutral-800 text-center"><p class="text-[9px] text-purple-400 uppercase font-bold tracking-wide">Net</p><p class="text-lg font-bold text-white mt-1" id="p2p-net">--</p></div>
+                </div>
+                <div class="border-t border-neutral-800 pt-4">
+                    <h4 class="text-xs font-semibold text-neutral-400 mb-3 uppercase tracking-wider">Connections</h4>
+                    <div class="grid grid-cols-2 gap-3" id="p2p-people-grid"></div>
+                </div>
+            </div>
+
+            <input type="text" id="tx-search" placeholder="Search..." class="w-full bg-neutral-900 border border-neutral-800 text-white rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-blue-500">
+
+            <div class="glass-panel rounded-3xl overflow-hidden">
+                <div class="overflow-y-auto" style="max-height: 50vh;">
+                    <table class="min-w-full text-xs text-left text-neutral-400">
+                        <thead class="text-[10px] text-neutral-500 uppercase bg-neutral-900 sticky top-0"><tr><th class="px-4 py-3">Date</th><th class="px-4 py-3">Desc</th><th class="px-4 py-3 text-right">Amt</th><th class="px-4 py-3 text-center"></th></tr></thead>
+                        <tbody id="tx-table-body" class="divide-y divide-neutral-800"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="calendar-view" class="view-section hidden space-y-6 max-w-lg mx-auto">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-2xl font-bold text-white" id="calendar-title">--</h2>
+                <button onclick="app.openBillModal()" class="p-2 bg-white text-black rounded-xl"><span class="material-symbols-rounded">add</span></button>
+            </div>
+            <div class="glass-panel rounded-3xl overflow-hidden p-1">
+                <div class="cal-grid"><div class="cal-head">S</div><div class="cal-head">M</div><div class="cal-head">T</div><div class="cal-head">W</div><div class="cal-head">T</div><div class="cal-head">F</div><div class="cal-head">S</div></div>
+                <div class="cal-grid mt-1 border-t-0 rounded-t-none" id="calendar-grid"></div>
+            </div>
+        </div>
+
+        <div id="rent-view" class="view-section hidden space-y-6 max-w-lg mx-auto">
+            <h2 class="text-2xl font-extrabold text-white flex items-center gap-2"><span class="material-symbols-rounded text-cyan-500">home_work</span> Rent Control</h2>
+            <div class="glass-panel p-5 rounded-3xl">
+                <label class="block text-xs font-bold text-neutral-500 uppercase mb-2">Total Rent Bill</label>
+                <input type="number" id="rent-total-input" class="input-dark w-full rounded-xl p-4 text-3xl font-black text-cyan-400" placeholder="0.00" onchange="app.updateRentTotal()">
+            </div>
+            <div class="space-y-4">
+                <div class="stat-card p-5 bg-neutral-900 border border-neutral-800">
+                     <div class="flex justify-between items-center mb-2"><h3 class="text-lg font-bold text-white">Wave 1</h3><span class="text-[10px] bg-cyan-900/30 text-cyan-400 px-2 py-1 rounded">Variable</span></div>
+                     <h2 class="text-3xl font-black text-white mb-2" id="rent-wave1-amt">--</h2>
+                     <div class="flex justify-between text-xs text-neutral-400 mb-3"><span>Carlos: $500</span><span class="text-cyan-400 font-bold" id="rent-wave1-anna">Anna: --</span></div>
+                     <div id="rent-wave1-status" class="p-2 rounded-lg bg-neutral-950 border border-neutral-800 text-center font-bold text-neutral-500 text-xs">PENDING</div>
+                </div>
+                <div class="stat-card p-5 bg-neutral-900 border border-neutral-800">
+                     <div class="flex justify-between items-center mb-2"><h3 class="text-lg font-bold text-white">Wave 2</h3><span class="text-[10px] bg-purple-900/30 text-purple-400 px-2 py-1 rounded">Fixed</span></div>
+                     <h2 class="text-3xl font-black text-white mb-2">$606.00</h2>
+                     <div class="flex justify-between text-xs text-neutral-400 mb-3"><span>Carlos: $400</span><span class="text-purple-400 font-bold">Anna: $206</span></div>
+                     <div id="rent-wave2-status" class="p-2 rounded-lg bg-neutral-950 border border-neutral-800 text-center font-bold text-neutral-500 text-xs">PENDING</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="spending-view" class="view-section hidden space-y-6 max-w-lg mx-auto">
+            <h2 class="text-2xl font-extrabold text-white flex items-center gap-2"><span class="material-symbols-rounded text-orange-500">restaurant</span> Food</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div onclick="app.showCategoryDetails('Dining')" class="stat-card p-4 bg-neutral-900 border-l-4 border-l-orange-500">
+                     <p class="text-[10px] font-bold text-orange-400 uppercase mb-1">Dining</p>
+                     <h3 class="text-2xl font-black text-white" id="fa-total-dining">--</h3>
+                </div>
+                <div onclick="app.showCategoryDetails('Groceries')" class="stat-card p-4 bg-neutral-900 border-l-4 border-l-emerald-500">
+                     <p class="text-[10px] font-bold text-emerald-400 uppercase mb-1">Groceries</p>
+                     <h3 class="text-2xl font-black text-white" id="fa-total-groceries">--</h3>
+                </div>
+            </div>
+            <div onclick="app.showFoodLeaderboard()" class="stat-card p-4 bg-neutral-900 border border-yellow-900/30 flex justify-between items-center">
+                 <div><p class="text-[10px] font-bold text-yellow-400 uppercase mb-1">Top Spot</p><h3 class="text-xl font-black text-white truncate w-32" id="fa-top-spot">--</h3></div>
+                 <span class="material-symbols-rounded text-yellow-500 text-3xl">trophy</span>
+            </div>
+            <div class="glass-panel p-4 rounded-3xl border border-neutral-800">
+                <div class="chart-container" style="height: 200px;"><canvas id="foodTrendChart"></canvas></div>
+            </div>
+        </div>
+
+        <div id="debt-view" class="view-section hidden space-y-6 max-w-lg mx-auto">
+            <h2 class="text-2xl font-extrabold text-white flex items-center gap-2"><span class="material-symbols-rounded text-blue-500">swords</span> Debt</h2>
+            <div class="grid grid-cols-1 gap-6" id="debt-container"></div>
+        </div>
+
+        <div id="settings-view" class="view-section hidden space-y-6 max-w-lg mx-auto pb-20">
+            <h2 class="text-2xl font-bold text-white">Settings</h2>
+            
+            <div class="p-5 bg-cyan-900/10 rounded-3xl border border-cyan-500/20">
+                <h4 class="font-bold text-cyan-400 mb-2 flex items-center gap-2"><span class="material-symbols-rounded">cloud_download</span> Backup & Restore</h4>
+                <p class="text-xs text-neutral-400 mb-4">Save your data locally or restore from a file.</p>
+                <div class="flex gap-2">
+                    <button onclick="app.exportData()" class="flex-1 bg-cyan-900/30 text-cyan-400 py-3 rounded-xl font-bold text-xs border border-cyan-500/30">Download Backup</button>
+                    <input type="file" id="restore-file" class="hidden" accept=".json">
+                    <button onclick="document.getElementById('restore-file').click()" class="flex-1 bg-neutral-800 text-white py-3 rounded-xl font-bold text-xs border border-neutral-700">Restore File</button>
+                </div>
+            </div>
+
+            <div class="p-5 bg-purple-900/10 rounded-3xl border border-purple-500/20">
+                <h4 class="font-bold text-purple-400 mb-2 flex items-center gap-2"><span class="material-symbols-rounded">history</span> Archive Old Data</h4>
+                <p class="text-xs text-neutral-400 mb-4">Compresses history > 1 year into your Starting Balance to save space. Creates a safety backup first.</p>
+                <button onclick="app.archiveData()" class="w-full bg-purple-900/30 text-purple-400 py-3 rounded-xl font-bold text-xs border border-purple-500/30 hover:bg-purple-900/40">Archive Old Transactions</button>
+            </div>
+
+            <div class="p-5 bg-neutral-900 rounded-3xl border border-neutral-800">
+                <h4 class="font-bold text-white mb-2">Import Transactions</h4>
+                <p class="text-xs text-neutral-500 mb-4">Select CSV from Chase Mobile app.</p>
+                <input type="file" id="csv-file-input" class="hidden" accept=".csv">
+                <button onclick="document.getElementById('csv-file-input').click()" class="w-full bg-white text-black py-3 rounded-xl font-bold text-sm">Select CSV File</button>
+                <div class="relative flex py-3 items-center"><div class="flex-grow border-t border-neutral-800"></div><span class="flex-shrink-0 mx-2 text-neutral-600 text-xs">OR PASTE TEXT</span><div class="flex-grow border-t border-neutral-800"></div></div>
+                <button onclick="app.openImportModal()" class="w-full bg-neutral-800 text-neutral-400 py-3 rounded-xl font-bold text-xs border border-neutral-700">Open Text Importer</button>
+            </div>
+
+            <div class="glass-panel p-5 rounded-3xl space-y-4">
+                <h3 class="font-bold text-white">Financials</h3>
+                <div><label class="block text-xs font-bold text-neutral-500 uppercase mb-1">Starting Balance</label><input type="number" id="set-start-bal" class="input-dark w-full rounded-xl py-3 px-4 font-bold text-emerald-400"></div>
+                <div><label class="block text-xs font-bold text-neutral-500 uppercase mb-1">Elevate Paycheck</label><input type="number" id="set-income" class="input-dark w-full rounded-xl py-3 px-4 font-bold"></div>
+                <div><label class="block text-xs font-bold text-neutral-500 uppercase mb-1">Anna Contribution</label><input type="number" id="set-anna" class="input-dark w-full rounded-xl py-3 px-4 font-bold"></div>
+                <button onclick="app.saveBudget()" class="w-full bg-neutral-800 text-white font-bold py-3 rounded-xl border border-neutral-700">Save Changes</button>
+            </div>
+            
+            <button onclick="app.resetData()" class="w-full py-4 text-red-500 font-bold text-xs">RESET APP DATA</button>
+        </div>
+
+        <div id="person-view" class="view-section hidden space-y-4 max-w-lg mx-auto">
+            <div class="flex justify-between items-center mb-2">
+                <button onclick="app.closePersonDetails()" class="p-2 rounded-full bg-neutral-800 text-white"><span class="material-symbols-rounded">arrow_back</span></button>
+                <h2 class="text-xl font-bold text-white" id="person-detail-name">--</h2>
+            </div>
+            <div class="glass-panel rounded-3xl overflow-hidden"><div class="p-4 bg-neutral-900 border-b border-neutral-800 flex justify-between"><span class="font-bold text-neutral-400">Net Total</span><span class="text-xl font-bold text-white" id="person-detail-total">--</span></div><div class="overflow-x-auto"><table class="min-w-full text-xs text-left text-neutral-400"><tbody id="person-detail-body" class="divide-y divide-neutral-800"></tbody></table></div></div>
+        </div>
+        
+        <div id="food-detail-view" class="view-section hidden space-y-4 max-w-lg mx-auto">
+             <div class="flex justify-between items-center mb-2"><button onclick="app.closeFoodDetails()" class="p-2 rounded-full bg-neutral-800 text-white"><span class="material-symbols-rounded">arrow_back</span></button><h2 class="text-xl font-bold text-white" id="detail-title">--</h2></div>
+             <div class="glass-panel rounded-3xl overflow-hidden"><div class="p-4 bg-neutral-900 border-b border-neutral-800 flex justify-between"><span class="font-bold text-neutral-400">Total</span><span class="text-xl font-bold text-white" id="detail-total">--</span></div><div class="overflow-x-auto"><table class="min-w-full text-xs text-left text-neutral-400"><tbody id="detail-body" class="divide-y divide-neutral-800"></tbody></table></div></div>
+        </div>
+        
+        <div id="leaderboard-view" class="view-section hidden space-y-4 max-w-lg mx-auto">
+             <div class="flex justify-between items-center mb-2"><button onclick="app.closeFoodDetails()" class="p-2 rounded-full bg-neutral-800 text-white"><span class="material-symbols-rounded">arrow_back</span></button><h2 class="text-xl font-bold text-white">Leaderboard</h2></div>
+             <div class="glass-panel rounded-3xl overflow-hidden"><div class="overflow-x-auto"><table class="min-w-full text-xs text-left text-neutral-400"><thead class="bg-neutral-900 font-bold uppercase text-neutral-500"><tr><th class="px-4 py-3">#</th><th class="px-4 py-3">Place</th><th class="px-4 py-3 text-right">Spent</th></tr></thead><tbody id="leaderboard-body" class="divide-y divide-neutral-800"></tbody></table></div></div>
+        </div>
+
+    </main>
+
+    <nav class="glass-dock fixed bottom-6 left-4 right-4 rounded-2xl px-2 py-3 flex justify-between z-50 max-w-lg mx-auto">
+        <button onclick="app.switchTab('dashboard')" id="nav-dashboard" class="dock-item p-2 rounded-xl text-neutral-500 flex-1 flex flex-col items-center gap-1 active"><span class="material-symbols-rounded">dashboard</span></button>
+        <button onclick="app.switchTab('calendar')" id="nav-calendar" class="dock-item p-2 rounded-xl text-neutral-500 flex-1 flex flex-col items-center gap-1"><span class="material-symbols-rounded">calendar_month</span></button>
+        <button onclick="app.switchTab('rent')" id="nav-rent" class="dock-item p-2 rounded-xl text-neutral-500 flex-1 flex flex-col items-center gap-1"><span class="material-symbols-rounded">home_work</span></button>
+        <button onclick="app.switchTab('spending')" id="nav-spending" class="dock-item p-2 rounded-xl text-neutral-500 flex-1 flex flex-col items-center gap-1"><span class="material-symbols-rounded">restaurant</span></button>
+        <button onclick="app.switchTab('debt')" id="nav-debt" class="dock-item p-2 rounded-xl text-neutral-500 flex-1 flex flex-col items-center gap-1"><span class="material-symbols-rounded">swords</span></button>
+        <button onclick="app.switchTab('transactions')" id="nav-transactions" class="dock-item p-2 rounded-xl text-neutral-500 flex-1 flex flex-col items-center gap-1"><span class="material-symbols-rounded">receipt_long</span></button>
+    </nav>
+
+    <div id="import-modal" class="hidden fixed inset-0 modal-bg z-50 flex items-center justify-center p-4"><div class="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl"><div class="p-4 border-b border-neutral-800 flex justify-between items-center bg-neutral-900"><h3 class="font-bold text-lg text-white">Paste Data</h3><button onclick="document.getElementById('import-modal').classList.add('hidden')" class="text-neutral-500 hover:text-white"><span class="material-symbols-rounded">close</span></button></div><div class="p-6"><textarea id="import-text" rows="8" class="w-full bg-black border border-neutral-800 rounded-xl p-3 text-xs font-mono text-neutral-300 focus:outline-none focus:border-blue-500" placeholder="Paste data here..."></textarea><button onclick="app.importData()" class="w-full mt-4 btn-primary py-3 rounded-xl font-bold">Process</button></div></div></div>
+    <div id="bill-modal" class="hidden fixed inset-0 modal-bg z-50 flex items-center justify-center p-4"><div class="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-sm p-6 space-y-4 shadow-2xl"><h3 class="font-bold text-lg text-white" id="bill-details-title">Bill Details</h3><div id="bill-details-content" class="space-y-4"></div><div id="bill-actions" class="space-y-2"></div><div class="flex gap-2"><button onclick="app.enableBillEdit()" class="flex-1 btn-primary py-3 rounded-xl font-bold">Edit</button><button onclick="app.deleteBill()" class="flex-1 bg-red-900/20 text-red-400 border border-red-900/30 py-3 rounded-xl font-bold hover:bg-red-900/30">Delete</button></div><button onclick="app.toggleBillModal()" class="w-full text-neutral-500 text-sm hover:text-white">Close</button></div></div>
+    <div id="bill-edit-modal" class="hidden fixed inset-0 modal-bg z-50 flex items-center justify-center p-4"><div class="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-sm p-6 space-y-4 shadow-2xl"><h3 class="font-bold text-lg text-white">Edit Bill</h3><input type="hidden" id="edit-bill-id"><input type="text" id="edit-bill-name" class="input-dark w-full rounded-xl p-3" placeholder="Name"><input type="number" id="edit-bill-amount" class="input-dark w-full rounded-xl p-3" placeholder="Amount"><input type="number" id="edit-bill-day" class="input-dark w-full rounded-xl p-3" placeholder="Day (1-31)"><button onclick="app.saveBill()" class="w-full btn-primary py-3 rounded-xl font-bold">Save</button><button onclick="document.getElementById('bill-edit-modal').classList.add('hidden')" class="w-full text-neutral-500 text-sm hover:text-white">Cancel</button></div></div>
+    <div id="tx-modal" class="hidden fixed inset-0 modal-bg z-50 flex items-center justify-center p-4"><div class="bg-neutral-900 border border-neutral-800 rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl"><h3 class="font-bold text-lg text-white" id="tx-modal-title">Transaction</h3><input type="hidden" id="tx-id"><input type="date" id="tx-date" class="input-dark w-full rounded-xl p-3"><input type="text" id="tx-desc" class="input-dark w-full rounded-xl p-3" placeholder="Description"><div class="grid grid-cols-2 gap-4"><input type="number" id="tx-amt" class="input-dark w-full rounded-xl p-3" placeholder="Amount"><select id="tx-cat" class="input-dark w-full rounded-xl p-3"><option>Dining</option><option>Groceries</option><option>Rent</option><option>Debt</option><option>Income</option><option>Other</option></select></div><button onclick="app.saveTransaction()" class="w-full btn-primary py-3 rounded-xl font-bold">Save</button><button onclick="app.toggleTxModal()" class="w-full text-neutral-500 text-sm hover:text-white">Cancel</button></div></div>
+
+    <script>
+        const app = {
+            data: { budget: { avgIncome: 1327.36, annaContrib: 300.00, rentTotal: 0, startingBalance: 0 }, bills: [], transactions: [] },
+            currentMonth: null, activePersonView: null, activeFoodView: null, charts: {},
+            
+            init: function() {
+                this.loadData();
+                
+                // AUTO-FIX: Repair dates corrupted by "202026" bug
+                let repairs = 0;
+                this.data.transactions.forEach(t => {
+                    if (t.d && t.d.startsWith('20202')) {
+                        t.d = t.d.replace('20202', '202');
+                        repairs++;
+                    }
+                });
+                if (repairs > 0) {
+                    this.saveData();
+                    console.log(`Auto-repaired ${repairs} transactions.`);
+                }
+
+                this.determineCurrentMonth(); 
+                document.getElementById('tx-date').valueAsDate = new Date();
+                document.getElementById('tx-search').addEventListener('input', (e) => this.renderTransactions(e.target.value));
+                
+                // MOBILE CSV FILE LISTENER
+                document.getElementById('csv-file-input').addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if(!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        document.getElementById('import-text').value = event.target.result;
+                        app.importData();
+                    };
+                    reader.readAsText(file);
+                });
+
+                // MOBILE RESTORE LISTENER
+                document.getElementById('restore-file').addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if(!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        if(confirm("Restore data? This overwrites everything.")) {
+                            try {
+                                app.data = JSON.parse(event.target.result);
+                                app.saveData();
+                                app.renderAll();
+                                alert("Data Restored!");
+                            } catch(err) { alert("Invalid Backup File"); }
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+
+                this.renderAll();
+            },
+
+            loadData: function() {
+                const saved = localStorage.getItem('moneyflow_data_v35'); 
+                if (saved) this.data = JSON.parse(saved);
+                else { this.data.transactions = []; this.data.bills = this.getStarterBills(); } 
+                document.getElementById('set-income').value = this.data.budget.avgIncome;
+                document.getElementById('set-anna').value = this.data.budget.annaContrib;
+                document.getElementById('rent-total-input').value = this.data.budget.rentTotal || '';
+                document.getElementById('set-start-bal').value = this.data.budget.startingBalance || 0;
+            },
+            saveData: function() { localStorage.setItem('moneyflow_data_v35', JSON.stringify(this.data)); },
+            resetData: function() { if(confirm("Reset?")) { localStorage.removeItem('moneyflow_data_v35'); location.reload(); } },
+            setText: function(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; },
+
+            exportData: function() {
+                const dataStr = JSON.stringify(this.data);
+                const blob = new Blob([dataStr], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `moneyflow_backup_${new Date().toISOString().slice(0,10)}.json`;
+                link.href = url;
+                link.click();
+            },
+
+            // ARCHIVE DATA FUNCTION (Safe + Auto Backup)
+            archiveData: function() {
+                if(!confirm("Archive transactions older than 1 year? \n\nThis will: \n1. Download a full backup. \n2. Sum old data into your Starting Balance. \n3. Delete old transactions to save space.")) return;
+                
+                // 1. Force Backup
+                this.exportData();
+
+                const oneYearAgo = new Date();
+                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+                // 2. Identify Old Transactions
+                const oldTx = this.data.transactions.filter(t => new Date(t.d) < oneYearAgo);
+                if (oldTx.length === 0) return alert("No transactions older than 1 year found.");
+
+                // 3. Calculate Sum
+                const sumOld = oldTx.reduce((acc, t) => acc + t.a, 0);
+
+                // 4. Update Starting Balance
+                this.data.budget.startingBalance = (this.data.budget.startingBalance || 0) + sumOld;
+
+                // 5. Delete Old Data
+                this.data.transactions = this.data.transactions.filter(t => new Date(t.d) >= oneYearAgo);
+
+                this.saveData();
+                this.renderAll();
+                document.getElementById('set-start-bal').value = this.data.budget.startingBalance; // Update UI
+                alert(`Archived ${oldTx.length} items.\nBalance adjusted by $${sumOld.toFixed(2)}.\nDashboard total remains accurate.`);
+            },
+
+            determineCurrentMonth: function() {
+                if (this.data.transactions.length === 0) { this.currentMonth = new Date(); return; }
+                this.currentMonth = this.data.transactions.reduce((max, t) => { const d = new Date(t.d); return d > max ? d : max; }, new Date(0));
+            },
+            getCurrentMonthTx: function() {
+                if (!this.currentMonth) this.determineCurrentMonth();
+                const m = this.currentMonth.getMonth(), y = this.currentMonth.getFullYear();
+                return this.data.transactions.filter(t => { const d = new Date(t.d); return d.getMonth() === m && d.getFullYear() === y; });
+            },
+            formatMonthLabel: function() { return this.data.transactions.length === 0 ? "No Data" : this.currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); },
+            getMonthKey: function(d) {
+                if (!d) d = new Date();
+                return `${d.getFullYear()}-${d.getMonth()}`;
+            },
+
+            renderDashboard: function() {
+                const monthTx = this.getCurrentMonthTx();
+                this.setText('dash-month-label', this.formatMonthLabel());
+                this.setText('p2p-month-label', this.formatMonthLabel());
+                this.setText('calendar-status-label', `Status: ${this.formatMonthLabel()}`);
+                this.setText('calendar-title', `Bills: ${this.formatMonthLabel()}`);
+
+                this.setText('dash-fixed-income', `$${this.data.budget.avgIncome.toFixed(2)}`);
+
+                const gigTx = monthTx.filter(t => t.a > 0 && !t.t.toLowerCase().includes('elevate') && !t.t.toLowerCase().includes('payroll'));
+                this.setText('dash-gig-income', `$${gigTx.reduce((s,t)=>s+t.a,0).toFixed(2)}`);
+
+                const din = monthTx.filter(t=>t.c==="Dining").reduce((s,t)=>s+Math.abs(t.a),0);
+                const gro = monthTx.filter(t=>t.c==="Groceries").reduce((s,t)=>s+Math.abs(t.a),0);
+                const tot = din+gro;
+                this.setText('dash-food-total', `$${tot.toFixed(0)}`);
+                this.setText('dash-dining-split', `$${din.toFixed(0)}`);
+                this.setText('dash-grocery-split', `$${gro.toFixed(0)}`);
+                
+                const dBar = document.getElementById('dash-dining-bar'); if(dBar) dBar.style.width = tot>0?`${(din/tot)*100}%`:'0%';
+                const gBar = document.getElementById('dash-grocery-bar'); if(gBar) gBar.style.width = tot>0?`${(gro/tot)*100}%`:'0%';
+
+                const start = this.data.budget.startingBalance || 0;
+                const totalTx = this.data.transactions.reduce((acc, t) => acc + t.a, 0);
+                const currentBal = start + totalTx;
+                this.setText('dash-balance', `$${currentBal.toLocaleString(undefined, {minimumFractionDigits: 2})}`);
+
+                const today = new Date().getDate();
+                const sorted = [...this.data.bills].sort((a,b)=>a.day-b.day);
+                let next = sorted.find(b=>b.day>=today) || sorted[0];
+                const nextEl = document.getElementById('dash-next-bill');
+                if(nextEl) {
+                    if(next) { nextEl.innerHTML = `<div class="flex items-center gap-3"><div class="bg-blue-900/30 text-blue-400 rounded-lg h-10 w-10 flex flex-col items-center justify-center font-bold text-sm"><span>${next.day}</span></div><div><p class="font-bold text-white">${next.name}</p><p class="text-xs text-neutral-400">$${next.amount}</p></div></div>`; } 
+                    else { nextEl.innerHTML = `<p class="text-sm text-neutral-500">No bills found.</p>`; }
+                }
+                
+                const now = new Date(); const freedom = new Date("2026-05-01");
+                const months = (freedom.getFullYear() - now.getFullYear()) * 12 + (freedom.getMonth() - now.getMonth());
+                this.setText('dash-months-left', months > 0 ? months : 0);
+
+                const dayBills = this.data.bills.filter(b => b.day === today);
+                const dayTotal = dayBills.reduce((acc, b) => acc + b.amount, 0);
+                this.setText('stat-day-total', `$${dayTotal.toFixed(0)}`);
+
+                const monthTotal = this.data.bills.reduce((acc, b) => acc + b.amount, 0);
+                this.setText('stat-month-total', `$${monthTotal.toFixed(0)}`);
+
+                const current = new Date();
+                const first = current.getDate() - current.getDay();
+                const last = first + 6;
+                const weekBills = this.data.bills.filter(b => b.day >= first && b.day <= last);
+                const weekTotal = weekBills.reduce((acc, b) => acc + b.amount, 0);
+                this.setText('stat-week-total', `$${weekTotal.toFixed(0)}`);
+            },
+
+            showBillBreakdown: function(type) {
+                const today = new Date().getDate();
+                const monthTx = this.getCurrentMonthTx();
+                let bills = []; let title = ""; let subtitle = "";
+
+                if (type === 'day') { bills = this.data.bills.filter(b => b.day === today); title = "Today's Mission"; subtitle = "Clear these now!"; } 
+                else if (type === 'week') { const current = new Date(); const first = current.getDate() - current.getDay(); const last = first + 6; bills = this.data.bills.filter(b => b.day >= first && b.day <= last); title = "Weekly Rush"; subtitle = "Speed run this week."; } 
+                else { bills = this.data.bills; title = "Zone Total"; subtitle = "Complete the month."; }
+
+                const total = bills.reduce((acc, b) => acc + b.amount, 0);
+                this.setText('breakdown-title', title);
+                this.setText('breakdown-subtitle', subtitle);
+                this.setText('breakdown-total', `$${total.toFixed(2)}`);
+
+                const tbody = document.getElementById('breakdown-body'); tbody.innerHTML = '';
+                if (bills.length === 0) { tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-neutral-500">No obstacles in sight!</td></tr>`; } 
+                else {
+                    bills.sort((a,b) => a.day - b.day).forEach(b => {
+                        let match = monthTx.find(t => t.t.toLowerCase().includes(b.name.toLowerCase().split(' ')[0]));
+                         if (b.name === "2nd Credit Card") { match = monthTx.find(t => t.t.includes("5201") || (t.t.toLowerCase().includes("chase") && Math.abs(t.a) === 45.00)); } 
+                         else if (b.name === "Student Loans") { match = monthTx.find(t => (t.t.toLowerCase().includes("cash app") || t.t.toLowerCase().includes("nelnet")) && Math.abs(t.a) > 150 && Math.abs(t.a) < 160); }
+                         else if (b.name === "Google Store") { match = monthTx.find(t => t.t.toLowerCase().includes("google") && !t.t.toLowerCase().includes("youtube") && Math.abs(Math.abs(t.a) - 25) < 5); }
+                         else if (b.name === "Farmers Insurance") { match = monthTx.find(t => t.t.toLowerCase().includes("farmers") || (Math.abs(t.a) === 224)); }
+                         else if (b.name === "Piedmont Health") { match = monthTx.find(t => t.t.toLowerCase().includes("piedmont")); }
+                         else if (b.name === "Disney+") { match = monthTx.find(t => t.t.toLowerCase().includes("disney") && Math.abs(Math.abs(t.a) - 6.43) < 2); }
+                         else if (b.name === "Chase Credit Card") { match = monthTx.find(t => t.t.toLowerCase().includes("chase") && !t.t.includes("5201") && Math.abs(Math.abs(t.a) - 75) < 10); }
+                         if (match && Math.abs(Math.abs(match.a) - b.amount) > 1 && b.name !== "Student Loans" && b.name !== "Disney+") match = null;
+                         
+                         const mKey = this.getMonthKey(this.currentMonth);
+                         if (b.manualPaid && b.manualPaid.includes(mKey)) match = true;
+
+                        let status = `<span class="text-xs font-bold text-blue-400">UPCOMING</span>`;
+                        if (match) status = `<span class="text-xs font-bold text-emerald-400">CLEARED</span>`;
+                        else if (b.day < today) status = `<span class="text-xs font-bold text-red-400">MISSED</span>`;
+
+                        tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3 font-bold text-white">Day ${b.day}</td><td class="px-4 py-3 text-neutral-300">${b.name}</td><td class="px-4 py-3 text-right font-bold text-white">$${b.amount.toFixed(2)}</td><td class="px-4 py-3 text-center">${status}</td></tr>`;
+                    });
+                }
+                document.getElementById('dashboard-view').classList.add('hidden');
+                document.getElementById('breakdown-view').classList.remove('hidden');
+            },
+
+            closeBreakdown: function() { document.getElementById('breakdown-view').classList.add('hidden'); document.getElementById('dashboard-view').classList.remove('hidden'); },
+            updateRentTotal: function() { this.data.budget.rentTotal = parseFloat(document.getElementById('rent-total-input').value) || 0; this.saveData(); this.renderRent(); },
+
+            renderRent: function() {
+                const total = this.data.budget.rentTotal || 0;
+                const wave2Base = 600.00; const wave2Fee = wave2Base * 0.01; const wave2Total = wave2Base + wave2Fee; 
+                let wave1Base = 0; if (total > wave2Base) { wave1Base = total - 600; }
+                const wave1Fee = wave1Base * 0.01; const wave1Total = wave1Base + wave1Fee;
+                const annaWave1 = Math.max(0, wave1Total - 500);
+                
+                this.setText('rent-wave1-amt', wave1Total > 0 ? `$${wave1Total.toFixed(2)}` : '--');
+                this.setText('rent-wave1-anna', annaWave1 > 0 ? `Anna: $${annaWave1.toFixed(2)}` : '--');
+                
+                const monthTx = this.getCurrentMonthTx();
+                const flexTx = monthTx.filter(t => t.t.toLowerCase().includes('flex'));
+                const allTx = this.data.transactions;
+                const currentMonth = this.currentMonth.getMonth(); const currentYear = this.currentMonth.getFullYear();
+                const paidWave1 = allTx.some(t => { const d = new Date(t.d); return (d.getMonth() === currentMonth && d.getFullYear() === currentYear || (d.getMonth() === (currentMonth - 1 + 12) % 12 && d.getDate() > 20)) && t.t.toLowerCase().includes('flex') && Math.abs(Math.abs(t.a) - wave1Total) < 10; });
+                const paidWave2 = flexTx.some(t => Math.abs(Math.abs(t.a) - wave2Total) < 5);
+
+                const w1Status = document.getElementById('rent-wave1-status');
+                if (wave1Total > 0 && paidWave1) { w1Status.className = "p-2 rounded-lg bg-emerald-900/30 text-emerald-400 font-bold border border-emerald-500/30 text-xs"; w1Status.innerHTML = "PAID"; } 
+                else { w1Status.className = "p-2 rounded-lg bg-neutral-950 text-neutral-500 font-bold border border-neutral-800 text-xs"; w1Status.innerHTML = "PENDING"; }
+
+                const w2Status = document.getElementById('rent-wave2-status');
+                if (paidWave2) { w2Status.className = "p-2 rounded-lg bg-purple-900/30 text-purple-400 font-bold border border-purple-500/30 text-xs"; w2Status.innerHTML = "PAID"; } 
+                else { w2Status.className = "p-2 rounded-lg bg-neutral-950 text-neutral-500 font-bold border border-neutral-800 text-xs"; w2Status.innerHTML = "PENDING"; }
+            },
+
+            renderDebt: function() {
+                const container = document.getElementById('debt-container'); if(!container) return; container.innerHTML = ''; 
+                const total1 = 7875; const paid1 = 4437; const bal1 = total1 - paid1; const pct1 = (paid1/total1)*100;
+                container.innerHTML += this.buildDebtCard('handshake', 'Tio Frank', '0% APR', '4 MO', 'bg-blue-500', 'text-blue-400', 'text-blue-500', bal1, total1, pct1, 787.50, 'Feb 15', paid1, [paid1, bal1]);
+                const orig2 = 8022.57; const bal2 = 1016; const paid2 = orig2 - bal2; const pct2 = (paid2/orig2)*100;
+                container.innerHTML += this.buildDebtCard('directions_car', 'Wells Fargo', 'Auto Draft', 'July 26', 'bg-indigo-600', 'text-indigo-400', 'text-indigo-500', bal2, orig2, pct2, 169.32, 'Feb 11', paid2, [paid2, bal2], true);
+                const estBal3 = 6500; const pmt3 = 153.83; const paid3 = 2000; const total3 = estBal3 + paid3; const pct3 = (paid3/total3)*100;
+                container.innerHTML += this.buildDebtCard('school', 'Student Loan', 'Federal', 'Tracker', 'bg-purple-600', 'text-purple-400', 'text-purple-500', estBal3, total3, pct3, pmt3, '5th', paid3, [paid3, estBal3]);
+            },
+
+            buildDebtCard: function(icon, name, sub, time, colorBg, colorTextLight, colorTextDark, bal, total, pct, nextAmt, nextDate, paid, chartData, isCar=false) {
+                const chartId = 'chart-' + name.replace(/\s+/g, '');
+                setTimeout(() => { const ctx = document.getElementById(chartId); if(ctx) { new Chart(ctx, {type:'doughnut',data:{labels:['Paid','Left'],datasets:[{data:chartData,backgroundColor:[colorTextDark.replace('text-','').replace('-500','#3b82f6').replace('-600','#4f46e5'), '#262626'],borderWidth:0}]},options:{cutout:'75%',plugins:{legend:{display:false}},maintainAspectRatio:false}}); } }, 100);
+                return `<div class="stat-card p-5 bg-neutral-900 border border-neutral-800"><div class="flex justify-between items-start mb-4"><div><h3 class="text-lg font-bold text-white">${name}</h3><p class="text-xs text-neutral-400">${sub}</p></div><div class="text-right"><p class="text-[10px] font-bold ${colorTextLight} uppercase">Time Left</p><p class="text-lg font-black ${colorTextLight}">${time}</p></div></div><div class="mb-4"><div class="flex justify-between text-xs font-bold mb-1"><span class="text-red-400">HP</span><span class="text-neutral-300">$${bal.toLocaleString()} / $${total.toLocaleString()}</span></div><div class="h-2 bg-neutral-950 rounded-full overflow-hidden border border-neutral-800"><div class="h-full ${colorBg}" style="width: ${pct}%"></div></div></div><div class="grid grid-cols-3 gap-2 items-center"><div class="p-2 bg-neutral-950 rounded border border-neutral-800"><p class="text-[10px] text-neutral-500 font-bold uppercase">Next</p><p class="text-sm font-bold text-white">$${nextAmt.toFixed(0)}</p></div><div class="p-2 bg-neutral-950 rounded border border-neutral-800"><p class="text-[10px] text-neutral-500 font-bold uppercase">Paid</p><p class="text-sm font-bold text-emerald-400">$${paid.toLocaleString()}</p></div><div class="h-10 relative"><canvas id="${chartId}"></canvas></div></div></div>`;
+            },
+
+            renderFood: function() {
+                if(document.getElementById('spending-view').classList.contains('hidden')) return;
+                const monthTx = this.getCurrentMonthTx();
+                const din = monthTx.filter(t=>t.c==="Dining").reduce((s,t)=>s+Math.abs(t.a),0);
+                const gro = monthTx.filter(t=>t.c==="Groceries").reduce((s,t)=>s+Math.abs(t.a),0);
+                this.setText('fa-total-dining', `$${din.toFixed(0)}`);
+                this.setText('fa-total-groceries', `$${gro.toFixed(0)}`);
+                
+                const canvas = document.getElementById('foodTrendChart');
+                if (canvas) {
+                    const exChart = Chart.getChart(canvas); if (exChart) exChart.destroy();
+                    const fTxAll = this.data.transactions.filter(t=>t.c==="Dining"||t.c==="Groceries");
+                    const dates={}; fTxAll.forEach(t=>{dates[t.d]=(dates[t.d]||0)+Math.abs(t.a)});
+                    this.charts.ft = new Chart(canvas, { type:'line', data:{labels:Object.keys(dates).sort().map(d=>d.substring(5)), datasets:[{label:'Spend', data:Object.keys(dates).sort().map(d=>dates[d]), borderColor:'#ef4444', backgroundColor:'rgba(239,68,68,0.1)', fill:true, tension:0.4}]}, options:{maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{display:false}, x:{grid:{display:false}}}} });
+                }
+                const spots={}; const foodTx = monthTx.filter(t=>t.c==="Dining"||t.c==="Groceries");
+                foodTx.forEach(t=>{ let n = t.t.split('#')[0].split(' Store')[0].trim().replace(/TST\*/g,'').replace(/SQ \*/g,'').trim(); if(n.toLowerCase().includes("chick")) n="Chick-Fil-A"; if(n.toLowerCase().includes("harris")) n="Harris Teeter"; spots[n]=(spots[n]||0)+Math.abs(t.a); });
+                const sorted = Object.entries(spots).sort((a,b)=>b[1]-a[1]);
+                if(sorted.length>0) this.setText('fa-top-spot', sorted[0][0]); else this.setText('fa-top-spot', "None");
+            },
+
+            renderCalendar: function() {
+                const list = document.getElementById('calendar-grid'); if(!list) return; list.innerHTML = '';
+                const date = this.currentMonth || new Date(); const year = date.getFullYear(); const month = date.getMonth(); 
+                this.setText('calendar-title', date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }));
+                const firstDay = new Date(year, month, 1).getDay(); const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const today = new Date().getDate(); const monthTx = this.getCurrentMonthTx();
+                const paydays = []; const refDate = new Date(2026, 0, 9);
+                for (let d = 1; d <= daysInMonth; d++) { const diffDays = Math.ceil((new Date(year, month, d) - refDate) / (1000 * 60 * 60 * 24)); if (diffDays % 14 === 0) paydays.push(d); }
+                for (let i = 0; i < firstDay; i++) { list.innerHTML += `<div class="bg-neutral-950 h-24 border border-neutral-900"></div>`; }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayBills = this.data.bills.filter(b => b.day === day);
+                    let billsHtml = '';
+                    dayBills.forEach(b => {
+                         let match = monthTx.find(t => t.t.toLowerCase().includes(b.name.toLowerCase().split(' ')[0]));
+                         if (b.name === "2nd Credit Card") { match = monthTx.find(t => t.t.includes("5201") || (t.t.toLowerCase().includes("chase") && Math.abs(t.a) === 45.00)); } 
+                         else if (b.name === "Student Loans") { match = monthTx.find(t => (t.t.toLowerCase().includes("cash app") || t.t.toLowerCase().includes("nelnet")) && Math.abs(t.a) > 150 && Math.abs(t.a) < 160); }
+                         else if (b.name === "Google Store") { match = monthTx.find(t => t.t.toLowerCase().includes("google") && !t.t.toLowerCase().includes("youtube") && Math.abs(Math.abs(t.a) - 25) < 5); }
+                         else if (b.name === "Farmers Insurance") { match = monthTx.find(t => t.t.toLowerCase().includes("farmers") || (Math.abs(t.a) === 224)); }
+                         else if (b.name === "Piedmont Health") { match = monthTx.find(t => t.t.toLowerCase().includes("piedmont")); }
+                         else if (b.name === "Disney+") { match = monthTx.find(t => t.t.toLowerCase().includes("disney") && Math.abs(Math.abs(t.a) - 6.43) < 2); }
+                         else if (b.name === "Chase Credit Card") { match = monthTx.find(t => t.t.toLowerCase().includes("chase") && !t.t.includes("5201") && Math.abs(Math.abs(t.a) - 75) < 10); }
+                         if (match && Math.abs(Math.abs(match.a) - b.amount) > 1 && b.name !== "Student Loans" && b.name !== "Disney+") match = null;
+                         const mKey = this.getMonthKey(date); if (b.manualPaid && b.manualPaid.includes(mKey)) match = true;
+                         let colorClass = 'bg-blue-900/40 text-blue-300 border border-blue-500/30'; 
+                         if (match) { colorClass = 'bg-emerald-900/40 text-emerald-300 border border-emerald-500/30'; } 
+                         else if (day < today && (new Date().getMonth() === month)) { colorClass = 'bg-red-900/40 text-red-300 border border-red-500/30'; }
+                         if (!match && day > today) colorClass = 'bg-blue-900/40 text-blue-300 border border-blue-500/30';
+                         billsHtml += `<div onclick="app.openBillModal(${b.id})" class="bill-pill ${colorClass}"><span class="truncate">${b.name}</span></div>`;
+                    });
+                    if (paydays.includes(day)) { billsHtml += `<div class="bill-pill income"><span class="truncate">Payday</span></div>`; }
+                    list.innerHTML += `<div class="cal-cell relative border border-neutral-900"><span class="text-[10px] font-bold text-neutral-600 mb-1">${day}</span><div class="flex-1 overflow-y-auto no-scrollbar">${billsHtml}</div></div>`;
+                }
+            },
+
+            showCategoryDetails: function(cat) { app.activeFoodView = cat; const monthTx = this.getCurrentMonthTx(); const catTx = monthTx.filter(t => t.c === cat); const total = catTx.reduce((s,t) => s + Math.abs(t.a), 0); this.setText('detail-title', cat); this.setText('detail-total', `$${total.toFixed(2)}`); const tbody = document.getElementById('detail-body'); tbody.innerHTML = ''; if(catTx.length === 0) tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-neutral-500">None</td></tr>`; catTx.sort((a,b) => new Date(b.d) - new Date(a.d)).forEach(t => { tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3">${t.d.substring(5)}</td><td class="px-4 py-3">${t.t}</td><td class="px-4 py-3 text-right font-bold text-neutral-300">$${Math.abs(t.a).toFixed(2)}</td><td class="px-4 py-3 text-center"><button onclick="app.openTxModal(${t.id})" class="text-blue-400"><span class="material-symbols-rounded text-sm">edit</span></button></td></tr>`; }); document.getElementById('spending-view').classList.add('hidden'); document.getElementById('food-detail-view').classList.remove('hidden'); },
+            showFoodLeaderboard: function() { const monthTx = this.getCurrentMonthTx(); const foodTx = monthTx.filter(t=>t.c==="Dining"||t.c==="Groceries"); const spots={}; foodTx.forEach(t=>{ let n = t.t.split('#')[0].split(' Store')[0].trim().replace(/TST\*/g,'').replace(/SQ \*/g,'').trim(); if(n.toLowerCase().includes("chick")) n="Chick-Fil-A"; if(n.toLowerCase().includes("harris")) n="Harris Teeter"; spots[n]=(spots[n]||0)+Math.abs(t.a); }); const sorted = Object.entries(spots).sort((a,b)=>b[1]-a[1]); const tbody = document.getElementById('leaderboard-body'); tbody.innerHTML = ''; sorted.forEach((item, index) => { tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3 font-bold text-yellow-500">#${index+1}</td><td class="px-4 py-3 text-neutral-300">${item[0]}</td><td class="px-4 py-3 text-right font-bold text-white">$${item[1].toFixed(2)}</td></tr>`; }); document.getElementById('spending-view').classList.add('hidden'); document.getElementById('leaderboard-view').classList.remove('hidden'); },
+            closeFoodDetails: function() { app.activeFoodView = null; document.getElementById('food-detail-view').classList.add('hidden'); document.getElementById('leaderboard-view').classList.add('hidden'); document.getElementById('spending-view').classList.remove('hidden'); },
+            renderP2PSummary: function() { const monthTx = this.getCurrentMonthTx(); const terms = ['zelle','venmo','cash app','paypal']; const p2pTx = monthTx.filter(t => terms.some(x => t.t.toLowerCase().includes(x))); const inAmt = p2pTx.filter(t=>t.a>0).reduce((s,t)=>s+t.a,0); const outAmt = p2pTx.filter(t=>t.a<0).reduce((s,t)=>s+Math.abs(t.a),0); const net = inAmt - outAmt; this.setText('p2p-total-in', `$${inAmt.toFixed(0)}`); this.setText('p2p-total-out', `$${outAmt.toFixed(0)}`); this.setText('p2p-net', (net>=0?'+':'') + `$${net.toFixed(0)}`); const people = {}; p2pTx.forEach(t => { const desc = t.t.toLowerCase(); let name = "Other"; if(desc.includes("anna")) name="Anna"; else if(desc.includes("ariel")) name="Ariel"; else if(desc.includes("cecy")) name="Cecy"; else if(desc.includes("frank")||desc.includes("tio")) name="Tio Frank"; else if(desc.includes("oscar")) name="Oscar"; if(!people[name]) people[name] = {in:0, out:0}; if(t.a>0) people[name].in += t.a; else people[name].out += Math.abs(t.a); }); const grid = document.getElementById('p2p-people-grid'); if(grid) { grid.innerHTML = ''; Object.entries(people).forEach(([name, stats]) => { grid.innerHTML += `<div onclick="app.showPersonDetails('${name}')" class="bg-neutral-900 p-2 rounded-lg border border-neutral-800 text-center"><p class="font-bold text-white text-xs mb-1">${name}</p><p class="text-[10px] text-emerald-400">+$${stats.in.toFixed(0)}</p><p class="text-[10px] text-red-400">-$${stats.out.toFixed(0)}</p></div>`; }); } },
+            showPersonDetails: function(name) { app.activePersonView = name; const monthTx = this.getCurrentMonthTx(); const terms = ['zelle','venmo','cash app','paypal']; let personTx; if (name === "Other") { personTx = monthTx.filter(t => { const desc = t.t.toLowerCase(); const isP2P = terms.some(x => desc.includes(x)); const isKnown = desc.includes("anna") || desc.includes("ariel") || desc.includes("cecy") || desc.includes("frank") || desc.includes("tio") || desc.includes("oscar"); return isP2P && !isKnown; }); } else { personTx = monthTx.filter(t => terms.some(x => t.t.toLowerCase().includes(x)) && t.t.toLowerCase().includes(name.toLowerCase())); } const net = personTx.reduce((s, t) => s + t.a, 0); this.setText('person-detail-name', name); this.setText('person-detail-total', (net>=0?'+':'') + `$${net.toFixed(2)}`); const tbody = document.getElementById('person-detail-body'); tbody.innerHTML = ''; personTx.sort((a,b) => new Date(b.d) - new Date(a.d)).forEach(t => { tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3">${t.d.substring(5)}</td><td class="px-4 py-3 text-xs">${t.t.substring(0,15)}...</td><td class="px-4 py-3 text-right font-bold text-white">${t.a.toFixed(2)}</td><td class="px-4 py-3 text-center"><button onclick="app.openTxModal(${t.id})" class="text-blue-400"><span class="material-symbols-rounded text-sm">edit</span></button></td></tr>`; }); document.getElementById('transactions-view').classList.add('hidden'); document.getElementById('person-view').classList.remove('hidden'); },
+            closePersonDetails: function() { app.activePersonView = null; document.getElementById('person-view').classList.add('hidden'); document.getElementById('transactions-view').classList.remove('hidden'); },
+            renderTransactions: function(filter='') { const tbody = document.getElementById('tx-table-body'); if(!tbody) return; tbody.innerHTML=''; [...this.data.transactions].sort((a,b)=>new Date(b.d)-new Date(a.d)).forEach(t => { if(filter && !t.t.toLowerCase().includes(filter.toLowerCase())) return; tbody.innerHTML += `<tr class="border-b border-neutral-800"><td class="px-4 py-3 text-neutral-400">${t.d.substring(5)}</td><td class="px-4 py-3 font-medium text-white">${t.t.substring(0,20)}</td><td class="px-4 py-3 text-right font-bold ${t.a>0?'text-emerald-400':'text-neutral-300'}">${t.a.toFixed(0)}</td><td class="px-4 py-3 text-center"><button onclick="app.openTxModal(${t.id})" class="text-blue-400 p-1"><span class="material-symbols-rounded text-sm">edit</span></button></td></tr>`; }); },
+            openImportModal: () => document.getElementById('import-modal').classList.remove('hidden'),
+            importData: function() {
+                try {
+                    const raw = document.getElementById('import-text').value.trim();
+                    if (!raw) return alert("Please paste data or select file.");
+                    if (raw.startsWith('{') && raw.includes('transactions')) { if(confirm("Restore backup?")) { this.data = JSON.parse(raw); this.saveData(); this.renderAll(); document.getElementById('import-modal').classList.add('hidden'); alert("Restored!"); } return; }
+                    
+                    // --- v9.6 DUPLICATE SHIELD ---
+                    const lines = raw.split(/\r?\n/); 
+                    let count = 0; 
+                    let duplicates = 0;
+                    
+                    // Create fingerprints for existing transactions
+                    const existingFingerprints = new Set(this.data.transactions.map(t => `${t.d}|${t.t}|${t.a}`));
+
+                    const sep = lines[0].includes('\t') ? '\t' : ',';
+                    const splitLine = (line) => { if (sep === '\t') return line.split('\t'); const res = []; let inQuote = false; let current = ''; for (let i = 0; i < line.length; i++) { const c = line[i]; if (c === '"') { inQuote = !inQuote; continue; } if (c === ',' && !inQuote) { res.push(current.trim()); current = ''; } else { current += c; } } res.push(current.trim()); return res; };
+                    let headers = []; let headerRowIdx = -1;
+                    for(let i=0; i<Math.min(lines.length, 5); i++) { const cols = splitLine(lines[i]).map(c => c.toLowerCase().replace(/['"]+/g, '').trim()); if(cols.includes('posting date') || cols.includes('date') || cols.includes('amount')) { headers = cols; headerRowIdx = i; break; } }
+                    if (headerRowIdx === -1) { alert("Headers not found."); return; }
+                    const dateIdx = headers.indexOf('posting date') > -1 ? headers.indexOf('posting date') : headers.indexOf('date'); const descIdx = headers.indexOf('description'); const amtIdx = headers.indexOf('amount');
+                    
+                    for (let i = headerRowIdx + 1; i < lines.length; i++) {
+                        const row = splitLine(lines[i]); if (row.length <= Math.max(dateIdx, amtIdx)) continue;
+                        let dateStr = row[dateIdx].replace(/['"]+/g, ''); let desc = row[descIdx] ? row[descIdx].replace(/['"]+/g, '') : "Unknown"; let amt = parseFloat(row[amtIdx].replace(/['"$]+/g, ''));
+                        if (dateStr && !isNaN(amt)) {
+                            let formattedDate = dateStr; 
+                            
+                            // DATE PARSING FIX (Handle 4-digit years correctly)
+                            if(dateStr.includes('/')) { 
+                                const parts = dateStr.split('/'); 
+                                if(parts.length === 3) {
+                                    let y = parts[2];
+                                    if(y.length === 2) y = '20' + y;
+                                    formattedDate = `${y}-${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}`;
+                                }
+                            }
+                            
+                            // CHECK FINGERPRINT
+                            const fingerprint = `${formattedDate}|${desc}|${amt}`;
+                            if(existingFingerprints.has(fingerprint)) {
+                                duplicates++;
+                                continue; // SKIP ADDING
+                            }
+
+                            let cat = "Other"; const dLow = desc.toLowerCase();
+                            if(amt > 0) cat = "Income"; else if(dLow.includes("flex")||dLow.includes("rent")) cat = "Rent"; else if(dLow.includes("loan")||dLow.includes("chase")||dLow.includes("tio")) cat = "Debt";
+                            else if(dLow.includes("walmart")||dLow.includes("harris")||dLow.includes("sams")||dLow.includes("food lion")||dLow.includes("publix")||dLow.includes("aldi")) cat = "Groceries";
+                            else { const foods=["restaurant","cafe","coffee","starbucks","dunkin","pizza","domino","burger","chick","mcdonald","taco","grill","bar","kitchen","sushi","bagel","deli","delaney","quarter","wendy","sonic","bojangles"]; if(foods.some(w=>dLow.includes(w))) cat = "Dining"; }
+                            if(dLow.includes("cash app*carlos cortez") && Math.abs(amt) > 150 && Math.abs(amt) < 160) cat = "Debt"; if(dLow.includes("5201")) cat = "Debt";
+                            
+                            this.data.transactions.push({ d: formattedDate, t: desc, a: amt, c: cat, id: Date.now() + Math.random() }); 
+                            count++;
+                        }
+                    }
+                    if(count > 0 || duplicates > 0) { 
+                        this.saveData(); 
+                        this.renderAll(); 
+                        document.getElementById('import-modal').classList.add('hidden'); 
+                        document.getElementById('import-text').value = ''; 
+                        alert(`Imported: ${count}\nSkipped Duplicates: ${duplicates}`); 
+                    }
+                } catch(e) { console.error(e); alert("Import failed."); }
+            },
+            saveBudget: () => { app.data.budget.avgIncome = parseFloat(document.getElementById('set-income').value); app.data.budget.annaContrib = parseFloat(document.getElementById('set-anna').value); app.data.budget.startingBalance = parseFloat(document.getElementById('set-start-bal').value); app.saveData(); app.renderAll(); app.switchTab('dashboard'); },
+            openBillModal: (id) => { document.getElementById('bill-modal').classList.remove('hidden'); document.getElementById('bill-actions').innerHTML = ''; if(id) { const b = app.data.bills.find(x=>x.id==id); if(b) { app.setText('bill-details-title', b.name); document.getElementById('bill-details-content').innerHTML = `<div class="p-4 bg-neutral-950 rounded-xl border border-neutral-800"><p class="text-xs text-neutral-500 uppercase font-bold">Amount Due</p><p class="text-2xl font-bold text-white">$${b.amount.toFixed(2)}</p></div>`; document.getElementById('edit-bill-id').value = b.id; document.getElementById('edit-bill-name').value = b.name; document.getElementById('edit-bill-amount').value = b.amount; document.getElementById('edit-bill-day').value = b.day; const mKey = app.getMonthKey(app.currentMonth); const isManualPaid = b.manualPaid && b.manualPaid.includes(mKey); const btnText = isManualPaid ? "Mark as UNPAID" : "Mark as PAID (Cash/Override)"; const btnClass = isManualPaid ? "bg-red-900/20 text-red-400 border-red-900/30" : "bg-emerald-900/20 text-emerald-400 border-emerald-900/30"; document.getElementById('bill-actions').innerHTML = `<button onclick="app.toggleManualPaid(${b.id})" class="w-full border py-3 rounded-xl font-bold ${btnClass}">${btnText}</button>`; } } else { document.getElementById('edit-bill-id').value=''; document.getElementById('edit-bill-name').value=''; document.getElementById('edit-bill-amount').value=''; document.getElementById('edit-bill-day').value=''; document.getElementById('bill-modal').classList.add('hidden'); document.getElementById('bill-edit-modal').classList.remove('hidden'); } },
+            toggleManualPaid: function(id) { const b = this.data.bills.find(x => x.id == id); if (!b) return; if (!b.manualPaid) b.manualPaid = []; const mKey = this.getMonthKey(this.currentMonth); if (b.manualPaid.includes(mKey)) b.manualPaid = b.manualPaid.filter(k => k !== mKey); else b.manualPaid.push(mKey); this.saveData(); this.renderAll(); this.openBillModal(id); },
+            toggleBillModal: () => document.getElementById('bill-modal').classList.add('hidden'),
+            enableBillEdit: () => { document.getElementById('bill-modal').classList.add('hidden'); document.getElementById('bill-edit-modal').classList.remove('hidden'); },
+            saveBill: () => { const id = document.getElementById('edit-bill-id').value; const name = document.getElementById('edit-bill-name').value; const amt = parseFloat(document.getElementById('edit-bill-amount').value); const day = parseInt(document.getElementById('edit-bill-day').value); if(!name) return; if(id) { const i = app.data.bills.findIndex(x => x.id == id); if(i > -1) app.data.bills[i] = { ...app.data.bills[i], name, amount: amt, day }; } else { app.data.bills.push({ id: Date.now() + Math.random(), name, amount: amt, day, manualPaid: [] }); } app.saveData(); app.renderAll(); document.getElementById('bill-edit-modal').classList.add('hidden'); },
+            deleteBill: () => { const id=document.getElementById('edit-bill-id').value; if(confirm("Delete this bill?")) { app.data.bills=app.data.bills.filter(x=>x.id!=id); app.saveData(); app.renderAll(); app.toggleBillModal(); } },
+            openTxModal: (id) => { document.getElementById('tx-modal').classList.remove('hidden'); if(id) { const t=app.data.transactions.find(x=>x.id==id); document.getElementById('tx-id').value=t.id; document.getElementById('tx-date').value=t.d; document.getElementById('tx-desc').value=t.t; document.getElementById('tx-amt').value=t.a; document.getElementById('tx-cat').value=t.c; } else { document.getElementById('tx-id').value=''; document.getElementById('tx-desc').value=''; document.getElementById('tx-amt').value=''; } },
+            toggleTxModal: () => document.getElementById('tx-modal').classList.add('hidden'),
+            saveTransaction: () => { const id = document.getElementById('tx-id').value; const d = document.getElementById('tx-date').value; const t = document.getElementById('tx-desc').value; const a = parseFloat(document.getElementById('tx-amt').value); const c = document.getElementById('tx-cat').value; if(!d) return; if(id) { const i = app.data.transactions.findIndex(x => x.id == id); if(i > -1) app.data.transactions[i] = { id: Number(id), d, t, a, c }; } else { app.data.transactions.push({ id: Date.now() + Math.random(), d, t, a, c }); } app.saveData(); app.renderAll(); app.toggleTxModal(); },
+            deleteTransaction: (id) => { if(confirm("Del?")) { app.data.transactions=app.data.transactions.filter(x=>x.id!=id); app.saveData(); app.renderAll(); } },
+            renderAll: function() { this.renderDashboard(); this.renderCalendar(); this.renderFood(); this.renderTransactions(); this.renderP2PSummary(); this.renderDebt(); this.renderRent(); if(app.activePersonView) app.showPersonDetails(app.activePersonView); if(app.activeFoodView) app.showCategoryDetails(app.activeFoodView); },
+            switchTab: function(id) { document.querySelectorAll('.view-section').forEach(el=>el.classList.add('hidden')); document.getElementById(id+'-view').classList.remove('hidden'); document.querySelectorAll('.dock-item').forEach(el=>{el.classList.remove('active');}); const nav = document.getElementById('nav-'+id); if(nav) nav.classList.add('active'); if(id === 'spending') this.renderFood(); if(id === 'rent') this.renderRent(); },
+            getStarterBills: function() { return [{id:1,name:"Flex Rent",amount:500.00,day:1},{id:2,name:"Student Loans",amount:153.83,day:5},{id:3,name:"2nd Credit Card",amount:45.00,day:5},{id:4,name:"Farmers Insurance",amount:224.00,day:7},{id:5,name:"Car Loan",amount:169.32,day:11},{id:6,name:"YouTube Premium",amount:24.54,day:12},{id:7,name:"Disney Bundle",amount:20.27,day:12},{id:8,name:"Tio Frank",amount:787.50,day:15},{id:9,name:"Flex Finance",amount:400.00,day:15},{id:10,name:"Piedmont Health",amount:47.45,day:22},{id:11,name:"Disney+",amount:6.43,day:28},{id:12,name:"Google Store",amount:25.00,day:28},{id:13,name:"Chase Credit Card",amount:75.00,day:28}]; },
+            getStarterData: function() { return []; } 
+        };
+        window.addEventListener('DOMContentLoaded', () => app.init());
+    </script>
+</body>
+</html>
